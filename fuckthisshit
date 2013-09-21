@@ -1,0 +1,27 @@
+#!/bin/sh
+#POSIX comlpliant new-line lol what the actual fuck
+IFS='
+'
+erred=false
+fuckhard=false
+filename=""
+if [ "$1" = "--hard" ] ; then
+    fuckhard=true
+    filename="$2"
+else
+    filename="$1"
+fi
+
+filelen=${#filename}
+gppout=$(g++ -ofucked_up $1 2>&1) #redirect stderr to stdout for lulz
+
+for line in $gppout
+do
+	echo "$line"
+    num=${line:$filelen+1:1}
+	echo $num
+	if [[ "$num" =~ ^[0-9]+$ ]] ; then
+		sed -n"$num" /.*// $1
+		erred=true
+	fi
+done
