@@ -19,8 +19,8 @@ spcfile ()
 
 chkfile ()
 {
-    if [ ! -e "$1" ] ; then
-        echo "Specifiy a fucking file that exists..."
+    if [ ! -s "$1" ] ; then
+        echo "Specifiy a fucking file that exists and is not empty..."
         exit 2
     elif [ ! -w "$1" ] || [ ! -r "$1" ] ; then
         echo "Specify a fucking file that I have permissions to..."
