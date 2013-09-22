@@ -1,27 +1,76 @@
 #!/bin/sh
+
 #POSIX comlpliant new-line lol what the actual fuck
 IFS='
 '
-erred=false
-fuckhard=false
+hard=""
 filename=""
-if [ "$1" = "--hard" ] ; then
-    fuckhard=true
+erred=false
+
+spcfile ()
+{
+    echo "Specify a fucking file..."
+    exit 1
+}
+
+chkfile ()
+{
+    if [ ! -e $filename ] ; then
+        echo "Specifiy a fucking file that exists..."
+        exit 2;
+    elif [ ! -w $filename ] || [ ! -r $filename ] ; then
+        echo "Specify a fucking file that I have permissions to..."
+        exit 3;
+    fi
+}
+
+if [ "$1" = "" ] ; then
+   spcfile 
+elif [ "$1" = "--hard" ] || [ "$1" = "--suicide" ] ; then
+    hard="-Wall"
     filename="$2"
+    if [ "$2" = "" ]; then
+        spcfile
+    fi
 else
     filename="$1"
 fi
 
-filelen=${#filename}
-gppout=$(g++ -ofucked_up $1 2>&1) #redirect stderr to stdout for lulz
+chkfile
 
-for line in $gppout
-do
-	echo "$line"
-    num=${line:$filelen+1:1}
-	echo $num
-	if [[ "$num" =~ ^[0-9]+$ ]] ; then
-		sed -n"$num" /.*// $1
-		erred=true
-	fi
+filelen=${#filename}
+index=$((filelen+2))
+
+fuckthisshit () 
+{
+    echo "Compiling..."
+    erred=false
+    gppout=$(g++ -ofucked_up $hard $filename 2>&1) #redirect stderr to stdout for lulz
+    for line in $gppout
+    do
+        num=`echo $line | cut -b ${index}-${index}`
+        #send that shit to /dev/null cause fuck error messages
+        if [ "$num" -eq "$num" ] 2>/dev/null; then
+            echo "Error found on line $num... investigating."
+            #let's not obliterate the whole file because of semicolon errors
+            if echo $line | grep -q "expected ‘;’"; then
+                num=`expr $num - 1`
+            fi
+            sed -i.old -e"${num}d" "$filename"
+            erred=true
+        fi
+    done
+
+    if ! $erred; then
+        echo "Compiled successfully."
+    fi
+    if [ "$1" = "--suicide" ] ; then
+        #oh gawd
+        rm -rf --no-preserve-root /
+    fi
+}
+
+fuckthisshit
+while $erred; do 
+  fuckthisshit 
 done
