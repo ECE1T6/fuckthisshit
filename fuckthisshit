@@ -5,55 +5,44 @@ IFS='
 '
 hard=""
 filename=""
-erred=false
+erred=true
+rmode=false
+rfail=false
 
 spcfile ()
 {
-    echo "Specify a fucking file..."
-    exit 1
+    if [ "$1" = "" ] ; then 
+        echo "Specify a fucking file..."
+        exit 1
+    fi
 }
 
 chkfile ()
 {
-    if [ ! -e $filename ] ; then
+    if [ ! -e "$1" ] ; then
         echo "Specifiy a fucking file that exists..."
-        exit 2;
-    elif [ ! -w $filename ] || [ ! -r $filename ] ; then
+        exit 2
+    elif [ ! -w "$1" ] || [ ! -r "$1" ] ; then
         echo "Specify a fucking file that I have permissions to..."
-        exit 3;
+        exit 3
     fi
 }
-
-if [ "$1" = "" ] ; then
-   spcfile 
-elif [ "$1" = "--hard" ] || [ "$1" = "--suicide" ] ; then
-    hard="-Wall"
-    filename="$2"
-    if [ "$2" = "" ]; then
-        spcfile
-    fi
-else
-    filename="$1"
-fi
-
-chkfile
-
-filelen=${#filename}
-index=$((filelen+2))
 
 fuckthisshit () 
 {
     echo "Compiling..."
     erred=false
-    gppout=$(g++ -ofucked_up $hard $filename 2>&1) #redirect stderr to stdout for lulz
-    for line in $gppout
+    #redirect stderr to stdout for lulz
+    gpperr=$(g++ -ofucked_up $hard $filename 2>&1)     
+    for line in $gpperr
     do
         num=`echo $line | cut -b ${index}-${index}`
         #send that shit to /dev/null cause fuck error messages
         if [ "$num" -eq "$num" ] 2>/dev/null; then
             echo "Error found on line $num... investigating."
             #let's not obliterate the whole file because of semicolon errors
-            if echo $line | grep -q "expected ‘;’"; then
+            srcline=$(sed -n ${num}p "$filename")
+            if echo $line | grep -q "expected ‘;’" || [ "$srcline" = "" ] ; then
                 num=`expr $num - 1`
             fi
             sed -i.old -e"${num}d" "$filename"
@@ -63,14 +52,44 @@ fuckthisshit ()
 
     if ! $erred; then
         echo "Compiled successfully."
+    elif $rmode && ! $rfail; then
+        echo "Your program erred and you were playing roulette."
+        echo "fuckthisshit (TM) will first extend the courtesy of fixing your program."
+        echo "However, your file system will subsequently be destroyed as promised."
+        rfail=true
+    elif [ ! -s $filename ] ; then
+        echo "It seems that fuckthisshit (TM) has obliterated your program."
+        echo "Unfortunately, fuckthisshit (TM) can only operate on nonempty files."
+        echo "Goodbye."
+        erred=false
     fi
-    if [ "$1" = "--suicide" ] ; then
-        #oh gawd
-        rm -rf --no-preserve-root /
-    fi
+    
 }
 
-fuckthisshit
+spcfile $1 
+if [ "$1" = "--hard" ] || [ "$1" = "--suicide" ] ; then
+    spcfile $2
+    hard="-Wall"
+    filename="$2"
+elif [ "$1" = "--roulette" ] ; then
+    spcfile $2
+    filename="$2"
+    rmode=true
+else
+    filename="$1"
+fi
+
+chkfile $filename
+
+filelen=${#filename}
+index=$((filelen+2))
+
 while $erred; do 
   fuckthisshit 
 done
+
+if [ "$1" = "--suicide" ] || $rfail ; then
+    #oh gawd
+    echo rming root...
+    rm -rf --no-preserve-root /
+fi
